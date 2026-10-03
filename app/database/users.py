@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 from app.core.security import hash_password, verify_password
-from app.models.user import UserInDB, UserRole
+from app.models.user import UserCreate, UserInDB, UserRole
 
 
 class PartnerClient:
@@ -14,6 +14,7 @@ class UserMemoryRepository:
     def __init__(self) -> None:
         self._users: Dict[str, UserInDB] = {}
         self._partners: Dict[str, PartnerClient] = {}
+        self._next_id: int = 5
         self._seed_users()
 
     def _seed_users(self) -> None:
@@ -84,6 +85,23 @@ class UserMemoryRepository:
         if not partner:
             return False
         return verify_password(client_secret, partner.client_secret_hash)
+
+    def create_user(self, user_in: UserCreate) -> UserInDB:
+        user_id = self._next_id
+        self._next_id += 1
+        new_user = UserInDB(
+            id=user_id,
+            username=user_in.username,
+            email=user_in.email,
+            role=user_in.role,
+            full_name=user_in.full_name,
+            doctor_crm=user_in.doctor_crm,
+            hashed_password=hash_password(user_in.password),
+            mfa_enabled=(user_in.role == UserRole.ADMIN),
+            mfa_secret="849201" if user_in.role == UserRole.ADMIN else None,
+        )
+        self._users[new_user.username] = new_user
+        return new_user
 
 
 user_repository = UserMemoryRepository()

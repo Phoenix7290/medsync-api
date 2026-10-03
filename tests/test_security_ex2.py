@@ -1,3 +1,9 @@
+from datetime import datetime, timezone
+from sqlmodel import Session
+from app.database.session import engine
+from app.models.appointment import Appointment
+
+
 def test_response_model_blocks_internal_audit_fields(client, receptionist_headers):
     payload = {
         "patient_name": "Ana Clara Nogueira",
@@ -29,20 +35,19 @@ def test_response_model_blocks_internal_audit_fields(client, receptionist_header
         assert field not in data
 
 
-def test_jinja2_template_autoescape_prevents_stored_xss(client, receptionist_headers):
-    xss_payload = "<script>alert('VULNERABILIDADE_XSS')</script>"
-    payload = {
-        "patient_name": xss_payload,
-        "patient_cpf": "000.111.222-33",
-        "doctor_name": "Dr. Lucas Martins",
-        "doctor_crm": "CRM/SP 543210",
-        "appointment_datetime": "2026-10-12T11:00:00Z",
-        "specialty": "Clínica Geral",
-        "status": "agendada",
-    }
-
-    create_response = client.post("/appointments/", json=payload, headers=receptionist_headers)
-    assert create_response.status_code == 201
+def test_jinja2_template_autoescape_prevents_stored_xss(client):
+    with Session(engine) as session:
+        xss_app = Appointment(
+            patient_name="<script>alert('VULNERABILIDADE_XSS')</script>",
+            patient_cpf="000.111.222-33",
+            doctor_name="Dr. Lucas Martins",
+            doctor_crm="CRM/SP 543210",
+            appointment_datetime=datetime(2026, 10, 12, 11, 0, tzinfo=timezone.utc),
+            specialty="Clínica Geral",
+            status="agendada",
+        )
+        session.add(xss_app)
+        session.commit()
 
     web_response = client.get("/recepcao/agenda")
     assert web_response.status_code == 200

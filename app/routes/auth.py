@@ -1,24 +1,50 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import settings
+from app.core.middleware import login_rate_limiter
 from app.core.security import create_access_token, verify_password
 from app.database.users import get_user_repository, UserMemoryRepository
 from app.models.user import (
     M2MTokenRequest,
     MFAVerifyRequest,
     Token,
+    UserCreate,
+    UserResponse,
     UserRole,
 )
 
 router = APIRouter(prefix="/auth", tags=["Autenticação e Tokens"])
 
 
-@router.post("/token", response_model=Token, summary="Login OAuth2 Password Flow")
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Cadastrar novo usuário no sistema")
+async def register_user(
+    user_in: UserCreate,
+    user_repo: UserMemoryRepository = Depends(get_user_repository),
+) -> UserResponse:
+    existing_user = user_repo.get_by_username(user_in.username)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nome de usuário já está em uso.",
+        )
+    return user_repo.create_user(user_in)
+
+
+@router.post("/token", response_model=Token, summary="Login OAuth2 Password Flow com Rate Limiting")
 async def login_for_access_token(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_repo: UserMemoryRepository = Depends(get_user_repository),
 ) -> Token:
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    if login_rate_limiter.is_rate_limited(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Muitas tentativas de login. Limite de requisições excedido. Tente novamente em instantes.",
+            headers={"Retry-After": "60"},
+        )
+
     user = user_repo.get_by_username(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(

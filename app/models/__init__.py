@@ -2,7 +2,7 @@ from app.models.appointment import (
     AppointmentBase,
     AppointmentCreate,
     AppointmentResponse,
-    AppointmentInternal,
+    Appointment,
 )
 from app.models.user import (
     UserRole,
@@ -16,10 +16,14 @@ from app.models.user import (
     M2MTokenRequest,
 )
 
+# Alias para compatibilidade
+AppointmentInternal = Appointment
+
 __all__ = [
     "AppointmentBase",
     "AppointmentCreate",
     "AppointmentResponse",
+    "Appointment",
     "AppointmentInternal",
     "UserRole",
     "UserBase",

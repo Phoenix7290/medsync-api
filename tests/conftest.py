@@ -1,16 +1,22 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
-from app.database import db_repository
+from sqlmodel import SQLModel
+from app.core.middleware import login_rate_limiter
 from app.core.security import create_access_token
+from app.database.session import engine, init_db
+from app.main import app
 from app.models.user import UserRole
 
 
 @pytest.fixture(autouse=True)
 def reset_db():
-    db_repository.reset()
+    login_rate_limiter.reset()
+    SQLModel.metadata.drop_all(engine)
+    init_db()
     yield
-    db_repository.reset()
+    login_rate_limiter.reset()
+    SQLModel.metadata.drop_all(engine)
+    init_db()
 
 
 @pytest.fixture

@@ -1,9 +1,10 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlmodel import Session, select
 
 from app.core.dependencies import get_current_token_payload
-from app.database import get_db_repository, AppointmentMemoryRepository
-from app.models.appointment import AppointmentCreate, AppointmentResponse
+from app.database.session import get_session
+from app.models.appointment import Appointment, AppointmentCreate, AppointmentResponse
 from app.models.user import TokenPayload, UserRole
 
 router = APIRouter(prefix="/appointments", tags=["Consultas"])
@@ -19,7 +20,7 @@ async def create_appointment(
     data: AppointmentCreate,
     request: Request,
     payload: TokenPayload = Depends(get_current_token_payload),
-    repo: AppointmentMemoryRepository = Depends(get_db_repository),
+    session: Session = Depends(get_session),
 ) -> AppointmentResponse:
     if payload.role == UserRole.DOCTOR.value:
         if payload.doctor_crm and data.doctor_crm != payload.doctor_crm:
@@ -29,7 +30,20 @@ async def create_appointment(
             )
 
     client_ip = request.client.host if request.client else "unknown"
-    record = repo.create(data, client_ip=client_ip)
+    record = Appointment(
+        patient_name=data.patient_name,
+        patient_cpf=data.patient_cpf,
+        doctor_name=data.doctor_name,
+        doctor_crm=data.doctor_crm,
+        appointment_datetime=data.appointment_datetime,
+        specialty=data.specialty,
+        status=data.status,
+        created_by_ip=client_ip,
+        internal_notes="Criado via API autenticada",
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
     return record
 
 
@@ -40,12 +54,15 @@ async def create_appointment(
 )
 async def list_appointments(
     payload: TokenPayload = Depends(get_current_token_payload),
-    repo: AppointmentMemoryRepository = Depends(get_db_repository),
+    session: Session = Depends(get_session),
 ) -> List[AppointmentResponse]:
-    all_appointments = repo.list_all()
     if payload.role == UserRole.DOCTOR.value:
-        return [app for app in all_appointments if app.doctor_crm == payload.doctor_crm]
-    return all_appointments
+        statement = select(Appointment).where(Appointment.doctor_crm == payload.doctor_crm)
+    else:
+        statement = select(Appointment)
+    
+    results = session.exec(statement).all()
+    return list(results)
 
 
 @router.get(
@@ -56,9 +73,10 @@ async def list_appointments(
 async def get_appointment(
     appointment_id: int,
     payload: TokenPayload = Depends(get_current_token_payload),
-    repo: AppointmentMemoryRepository = Depends(get_db_repository),
+    session: Session = Depends(get_session),
 ) -> AppointmentResponse:
-    appointment = repo.get_by_id(appointment_id)
+    statement = select(Appointment).where(Appointment.id == appointment_id)
+    appointment = session.exec(statement).first()
     if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -83,9 +101,10 @@ async def get_appointment(
 async def delete_appointment(
     appointment_id: int,
     payload: TokenPayload = Depends(get_current_token_payload),
-    repo: AppointmentMemoryRepository = Depends(get_db_repository),
+    session: Session = Depends(get_session),
 ) -> None:
-    appointment = repo.get_by_id(appointment_id)
+    statement = select(Appointment).where(Appointment.id == appointment_id)
+    appointment = session.exec(statement).first()
     if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -99,4 +118,5 @@ async def delete_appointment(
                 detail="Acesso negado. Você só tem permissão para cancelar consultas sob seu CRM.",
             )
 
-    repo.delete(appointment_id)
+    session.delete(appointment)
+    session.commit()
