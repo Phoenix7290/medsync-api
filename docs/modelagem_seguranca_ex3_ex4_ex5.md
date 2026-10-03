@@ -1,10 +1,4 @@
-# MedSync API — Modelagem de Segurança, Ameaças e Arquitetura
-
-**Assessment de Desenvolvimento Seguro (Exercícios 3, 4 e 5)**
-**Autor:** Marcos Ryan (`marcos.ryanss@proton.me`)
-**Repositório:** [https://github.com/Phoenix7290/medsync-api](https://github.com/Phoenix7290/medsync-api)
-
----
+# MedSync API - Modelagem de Segurança, Ameaças e Arquitetura
 
 ## 1. Exercício 3: Fundamentos de Segurança e Modelagem Inicial
 
@@ -33,7 +27,7 @@ A aplicação **MedSync** opera diretamente no setor de saúde, gerenciando cons
 
 ---
 
-### 1.3 Data Flow Diagram (DFD) com Trust Boundaries
+### 1.3 Data Flow Diagram (DFD) com Trust Boundarie
 
 ```mermaid
 flowchart TD

@@ -8,9 +8,10 @@ API RESTful modularizada desenvolvida com **FastAPI**, **Pydantic** e **SQLModel
 
 ## Vídeo de Apresentação Técnica (YouTube)
 
-- **Link do Vídeo (Não Listado):** `[LINK]`
+- **Link do Vídeo (Não Listado):** [youtube-link](https://youtu.be/0cyzDBWq-KE)
 - **Duração:** Até 5 minutos
 - **Conteúdo Apresentado:** Apresentação da arquitetura modular, mitigações OWASP (BOLA, XSS, Mass Assignment), autenticação RBAC com ownership, demonstração ao vivo com 31 testes pytest aprovados, Security Gate no GitHub Actions e parecer de risco residual.
+- **Link de vídeo Drive (Backup):** [link](https://drive.google.com/file/d/1NbZpZJL85cR2zsuIglHnQMpHzZoefh7W/view?usp=drive_link)
 
 ---
 

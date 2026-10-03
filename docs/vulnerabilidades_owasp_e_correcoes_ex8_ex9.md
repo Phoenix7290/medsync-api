@@ -1,9 +1,4 @@
-# MedSync API — Identificação de Vulnerabilidades OWASP, Correções Defensivas e Hardening
-**Assessment de Desenvolvimento Seguro (Exercícios 8, 9, 10 e 11)**  
-**Autor:** Marcos Ryan (`marcos.ryanss@proton.me`)  
-**Repositório:** [https://github.com/Phoenix7290/medsync-api](https://github.com/Phoenix7290/medsync-api)
-
----
+# MedSync API — Identificação de Vulnerabilidades OWASP, Correções 
 
 ## 1. Exercício 8: Identificação de Vulnerabilidades no Código (OWASP Top 10)
 
