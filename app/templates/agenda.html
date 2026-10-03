@@ -74,13 +74,6 @@
         </div>
     </div>
 
-    {# 
-       DECISÃO DE SEGURANÇA (Exercício 2 - Prevenção contra Cross-Site Scripting - Stored XSS):
-       O Jinja2 está configurado com auto-escape ativo. Qualquer dado inserido
-       externamente (como nomes de pacientes contendo scripts maliciosos <script>alert(1)</script>)
-       é automaticamente codificado em entidades HTML (&lt;script&gt;) pelo motor de templates.
-       O filtro "| safe" NUNCA é aplicado sobre campos preenchidos por usuários.
-    #}
     <div class="table-container">
         <table>
             <thead>

@@ -1,16 +1,3 @@
-"""
-Módulo de Banco de Dados em Memória (Fase Inicial - Exercício 1).
-
-Decisões de Arquitetura e Segurança:
-1. Conforme planejado para o ciclo de desenvolvimento seguro da disciplina,
-   a aplicação inicia com uma camada de persistência em memória padronizada
-   para validar regras e fluxos de negócio, preparando o terreno para a migração
-   segura para SQLModel parametrizado no Exercício 11.
-2. Cada registro gerado recebe metadados de auditoria gerados internamente
-   pelo servidor (como internal_audit_id UUID, timestamp de criação e IP),
-   garantindo que clientes externos não consigam forjar metadados.
-"""
-
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -18,15 +5,12 @@ from app.models.appointment import AppointmentCreate, AppointmentInternal
 
 
 class AppointmentMemoryRepository:
-    """Repositório em memória para persistência segura de consultas."""
-
     def __init__(self) -> None:
         self._storage: Dict[int, AppointmentInternal] = {}
         self._next_id: int = 1
         self._seed_initial_data()
 
     def _seed_initial_data(self) -> None:
-        """Semeia dados iniciais para viabilizar testes e visualização na recepção."""
         initial_records = [
             AppointmentCreate(
                 patient_name="Mariana Souza",
@@ -56,7 +40,6 @@ class AppointmentMemoryRepository:
         client_ip: str = "127.0.0.1",
         internal_notes: Optional[str] = None
     ) -> AppointmentInternal:
-        """Cria e armazena uma consulta com campos de auditoria controlados pelo servidor."""
         appointment_id = self._next_id
         self._next_id += 1
 
@@ -78,31 +61,25 @@ class AppointmentMemoryRepository:
         return record
 
     def get_by_id(self, appointment_id: int) -> Optional[AppointmentInternal]:
-        """Recupera uma consulta pelo identificador."""
         return self._storage.get(appointment_id)
 
     def list_all(self) -> List[AppointmentInternal]:
-        """Lista todas as consultas cadastradas."""
         return list(self._storage.values())
 
     def delete(self, appointment_id: int) -> bool:
-        """Remove uma consulta existente."""
         if appointment_id in self._storage:
             del self._storage[appointment_id]
             return True
         return False
 
     def reset(self) -> None:
-        """Limpa e restaura o estado inicial para baterias de testes."""
         self._storage.clear()
         self._next_id = 1
         self._seed_initial_data()
 
 
-# Instância global do repositório em memória
 db_repository = AppointmentMemoryRepository()
 
 
 def get_db_repository() -> AppointmentMemoryRepository:
-    """Função provedora de dependência do repositório de dados."""
     return db_repository

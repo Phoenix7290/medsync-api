@@ -7,6 +7,13 @@ API RESTful modularizada desenvolvida com **FastAPI**, **Pydantic** e **SQLModel
 
 ---
 
+## 🎥 Vídeo de Apresentação Técnica (YouTube)
+- **Link do Vídeo (Não Listado):** `[INSERIR_LINK_DO_YOUTUBE_AQUI]`
+- **Duração:** Até 5 minutos (conforme edital)
+- **Conteúdo Apresentado:** Apresentação da arquitetura modular, mitigações OWASP (BOLA, XSS, Mass Assignment), autenticação RBAC com ownership, demonstração ao vivo com 31 testes pytest aprovados, Security Gate no GitHub Actions e parecer de risco residual.
+
+---
+
 ## 🚀 Como Executar o Projeto Localmente
 
 ### 1. Criar e Ativar o Ambiente Virtual Python
