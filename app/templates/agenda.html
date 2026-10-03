@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda do Dia - MedSync Recepção{% endblock %}
+
+{% block extra_head %}
+<style>
+    .table-container {
+        overflow-x: auto;
+        margin-top: 1rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    th, td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    th {
+        background-color: var(--secondary-color);
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    tr:hover {
+        background-color: #fbfcfe;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    .status-agendada {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+    .status-confirmada {
+        background-color: #dcfce7;
+        color: var(--success-color);
+    }
+    .status-cancelada {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    .security-notice {
+        margin-top: 1.5rem;
+        padding: 0.75rem 1rem;
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #166534;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Agenda Diária de Consultas</h2>
+            <p style="margin: 0.25rem 0 0 0; color: #555; font-size: 0.9rem;">
+                Visualização segura restrita aos operadores da recepção.
+            </p>
+        </div>
+        <div>
+            <span style="font-size: 0.85rem; color: #666;">Data de Referência: <strong>Hoje</strong></span>
+        </div>
+    </div>
+
+    {# 
+       DECISÃO DE SEGURANÇA (Exercício 2 - Prevenção contra Cross-Site Scripting - Stored XSS):
+       O Jinja2 está configurado com auto-escape ativo. Qualquer dado inserido
+       externamente (como nomes de pacientes contendo scripts maliciosos <script>alert(1)</script>)
+       é automaticamente codificado em entidades HTML (&lt;script&gt;) pelo motor de templates.
+       O filtro "| safe" NUNCA é aplicado sobre campos preenchidos por usuários.
+    #}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Horário</th>
+                    <th>Paciente</th>
+                    <th>Profissional de Saúde</th>
+                    <th>Especialidade</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for consulta in appointments %}
+                <tr>
+                    <td>{{ consulta.appointment_datetime.strftime('%H:%M') }}</td>
+                    <td><strong>{{ consulta.patient_name }}</strong></td>
+                    <td>{{ consulta.doctor_name }} <small style="color: #666;">({{ consulta.doctor_crm }})</small></td>
+                    <td>{{ consulta.specialty }}</td>
+                    <td>
+                        <span class="status-badge status-{{ consulta.status }}">
+                            {{ consulta.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #777; padding: 2rem;">
+                        Nenhuma consulta agendada para hoje até o momento.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="security-notice">
+        <strong>Controle de Exposição e Integridade:</strong> Esta página utiliza herança de templates e sanitização contextual contra XSS. Metadados internos de auditoria (como endereços IP de criação e logs de depuração) são estritamente ocultados da interface visual da recepção.
+    </div>
+</div>
+{% endblock %}
