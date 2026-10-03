@@ -1,0 +1,11 @@
+{
+  "scan_title": "OWASP ZAP 2.15.0 - Passive Security Scan Report",
+  "generated_at": "2026-10-03T05:39:47.484443+00:00",
+  "target_url": "http://127.0.0.1:8000",
+  "summary": {
+    "pass": 30,
+    "fail": 0,
+    "total_checks": 30
+  },
+  "findings": []
+}

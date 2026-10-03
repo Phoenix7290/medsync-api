@@ -1,0 +1,44 @@
+name: DevSecOps Security Pipeline & Automated Audit
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-audit:
+    name: Security Gate & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies & Security Scanners
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install bandit pip-audit
+
+      - name: Stage 1 - Software Composition Analysis (SCA)
+        run: |
+          echo "Executando análise de vulnerabilidades em dependências de terceiros..."
+          pip-audit -r requirements.txt
+
+      - name: Stage 2 - Static Application Security Testing (SAST)
+        run: |
+          echo "Executando análise estática de segurança no código com Bandit..."
+          echo "Security Gate Ativo: Bloqueio imediato para achados de severidade MÉDIA ou ALTA."
+          bandit -r app/ -ll
+
+      - name: Stage 3 - Automated Security and Unit Testing (Pytest)
+        run: |
+          echo "Executando suíte completa de testes automatizados de segurança, RBAC e OpenAPI..."
+          pytest -v
