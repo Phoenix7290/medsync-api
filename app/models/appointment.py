@@ -1,7 +1,7 @@
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 from pydantic import ConfigDict, field_validator
 from sqlmodel import Field as SQLField, SQLModel
 
@@ -56,7 +56,7 @@ class AppointmentBase(SQLModel):
 
 
 class AppointmentCreate(AppointmentBase):
-    model_config = ConfigDict(extra="forbid")
+    model_config: Any = ConfigDict(extra="forbid")
 
 
 class AppointmentResponse(SQLModel):
@@ -68,11 +68,11 @@ class AppointmentResponse(SQLModel):
     specialty: str
     status: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: Any = ConfigDict(from_attributes=True)
 
 
 class Appointment(AppointmentBase, table=True):
-    __tablename__ = "appointments"
+    __tablename__: Any = "appointments"
 
     id: Optional[int] = SQLField(default=None, primary_key=True)
     internal_audit_id: str = SQLField(

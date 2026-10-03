@@ -45,6 +45,12 @@ def get_current_user(
     payload: TokenPayload = Depends(get_current_token_payload),
     user_repo: UserMemoryRepository = Depends(get_user_repository),
 ) -> UserInDB:
+    if not payload.sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais de autenticação inválidas.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     user = user_repo.get_by_username(payload.sub)
     if not user:
         raise HTTPException(

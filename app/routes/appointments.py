@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlmodel import Session, select
 
@@ -21,7 +21,7 @@ async def create_appointment(
     request: Request,
     payload: TokenPayload = Depends(get_current_token_payload),
     session: Session = Depends(get_session),
-) -> AppointmentResponse:
+) -> Any:
     if payload.role == UserRole.DOCTOR.value:
         if payload.doctor_crm and data.doctor_crm != payload.doctor_crm:
             raise HTTPException(
@@ -55,7 +55,7 @@ async def create_appointment(
 async def list_appointments(
     payload: TokenPayload = Depends(get_current_token_payload),
     session: Session = Depends(get_session),
-) -> List[AppointmentResponse]:
+) -> Any:
     if payload.role == UserRole.DOCTOR.value:
         statement = select(Appointment).where(Appointment.doctor_crm == payload.doctor_crm)
     else:
@@ -74,7 +74,7 @@ async def get_appointment(
     appointment_id: int,
     payload: TokenPayload = Depends(get_current_token_payload),
     session: Session = Depends(get_session),
-) -> AppointmentResponse:
+) -> Any:
     statement = select(Appointment).where(Appointment.id == appointment_id)
     appointment = session.exec(statement).first()
     if not appointment:

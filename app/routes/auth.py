@@ -28,7 +28,14 @@ async def register_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nome de usuário já está em uso.",
         )
-    return user_repo.create_user(user_in)
+    created_user = user_repo.create_user(user_in)
+    return UserResponse(
+        id=created_user.id,
+        username=created_user.username,
+        email=created_user.email,
+        role=created_user.role,
+        full_name=created_user.full_name,
+    )
 
 
 @router.post("/token", response_model=Token, summary="Login OAuth2 Password Flow com Rate Limiting")
@@ -134,6 +141,12 @@ async def m2m_token_exchange(
         )
 
     partner = user_repo.get_partner(m2m_in.client_id)
+    if not partner:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Client credentials inválidas para parceiro M2M.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token_data = {
         "sub": partner.client_id,
         "role": UserRole.PARTNER.value,
