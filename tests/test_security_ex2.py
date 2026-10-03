@@ -65,4 +65,4 @@ def test_template_inheritance_renders_base_layout(client):
 
     assert "MedSync • Rede de Clínicas Médicas" in html
     assert "Portal da Recepção" in html
-    assert "LGPD (Art. 5º, II - Dados Sensíveis de Saúde)" in html
+    assert "LGPD (Dados Sensíveis de Saúde)" in html
