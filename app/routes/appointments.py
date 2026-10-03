@@ -1,23 +1,10 @@
-"""
-Módulo de Rotas RESTful para Consultas (Appointments) - Exercícios 1 e 2.
-
-Decisões de Segurança e Arquitetura:
-1. Modularização via APIRouter, desacoplando o recurso do entrypoint da aplicação.
-2. Controle Estrito de Exposição (Exercício 2):
-   O uso de 'response_model=AppointmentResponse' garante que a serialização JSON
-   remova automaticamente os campos internos de auditoria (como 'internal_audit_id',
-   'created_by_ip' e 'internal_notes') antes que o payload saia da fronteira de
-   confiança da API.
-3. Rastreabilidade e Auditoria: O endereço IP de origem do cliente e metadados
-   são capturados no momento do cadastro e armazenados na entidade interna,
-   sem contudo vazar para o cliente que fez a requisição.
-"""
-
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from app.core.dependencies import get_current_token_payload
 from app.database import get_db_repository, AppointmentMemoryRepository
 from app.models.appointment import AppointmentCreate, AppointmentResponse
+from app.models.user import TokenPayload, UserRole
 
 router = APIRouter(prefix="/appointments", tags=["Consultas"])
 
@@ -31,14 +18,16 @@ router = APIRouter(prefix="/appointments", tags=["Consultas"])
 async def create_appointment(
     data: AppointmentCreate,
     request: Request,
+    payload: TokenPayload = Depends(get_current_token_payload),
     repo: AppointmentMemoryRepository = Depends(get_db_repository),
 ) -> AppointmentResponse:
-    """
-    Cadastra uma nova consulta no sistema.
-    
-    Campos de auditoria interna são injetados pelo backend e omitidos
-    da resposta JSON através do response_model AppointmentResponse.
-    """
+    if payload.role == UserRole.DOCTOR.value:
+        if payload.doctor_crm and data.doctor_crm != payload.doctor_crm:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Profissionais de saúde só podem criar consultas para o seu próprio CRM.",
+            )
+
     client_ip = request.client.host if request.client else "unknown"
     record = repo.create(data, client_ip=client_ip)
     return record
@@ -47,15 +36,16 @@ async def create_appointment(
 @router.get(
     "/",
     response_model=List[AppointmentResponse],
-    summary="Listar todas as consultas",
+    summary="Listar consultas com controle de acesso",
 )
 async def list_appointments(
+    payload: TokenPayload = Depends(get_current_token_payload),
     repo: AppointmentMemoryRepository = Depends(get_db_repository),
 ) -> List[AppointmentResponse]:
-    """
-    Retorna a lista de consultas cadastradas com filtragem de campos internos.
-    """
-    return repo.list_all()
+    all_appointments = repo.list_all()
+    if payload.role == UserRole.DOCTOR.value:
+        return [app for app in all_appointments if app.doctor_crm == payload.doctor_crm]
+    return all_appointments
 
 
 @router.get(
@@ -65,18 +55,23 @@ async def list_appointments(
 )
 async def get_appointment(
     appointment_id: int,
+    payload: TokenPayload = Depends(get_current_token_payload),
     repo: AppointmentMemoryRepository = Depends(get_db_repository),
 ) -> AppointmentResponse:
-    """
-    Busca uma consulta específica pelo seu ID.
-    Lança HTTP 404 se não for encontrada.
-    """
     appointment = repo.get_by_id(appointment_id)
     if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Consulta com ID {appointment_id} não encontrada."
+            detail=f"Consulta com ID {appointment_id} não encontrada.",
         )
+
+    if payload.role == UserRole.DOCTOR.value:
+        if payload.doctor_crm and appointment.doctor_crm != payload.doctor_crm:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado. Você só tem permissão para visualizar consultas sob seu CRM.",
+            )
+
     return appointment
 
 
@@ -87,14 +82,21 @@ async def get_appointment(
 )
 async def delete_appointment(
     appointment_id: int,
+    payload: TokenPayload = Depends(get_current_token_payload),
     repo: AppointmentMemoryRepository = Depends(get_db_repository),
 ) -> None:
-    """
-    Remove uma consulta do sistema pelo seu identificador.
-    """
-    success = repo.delete(appointment_id)
-    if not success:
+    appointment = repo.get_by_id(appointment_id)
+    if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Consulta com ID {appointment_id} não encontrada para remoção."
+            detail=f"Consulta com ID {appointment_id} não encontrada para remoção.",
         )
+
+    if payload.role == UserRole.DOCTOR.value:
+        if payload.doctor_crm and appointment.doctor_crm != payload.doctor_crm:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado. Você só tem permissão para cancelar consultas sob seu CRM.",
+            )
+
+    repo.delete(appointment_id)

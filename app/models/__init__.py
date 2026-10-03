@@ -1,10 +1,19 @@
-"""Módulo de modelos da aplicação MedSync."""
-
 from app.models.appointment import (
     AppointmentBase,
     AppointmentCreate,
     AppointmentResponse,
     AppointmentInternal,
+)
+from app.models.user import (
+    UserRole,
+    UserBase,
+    UserCreate,
+    UserResponse,
+    UserInDB,
+    Token,
+    TokenPayload,
+    MFAVerifyRequest,
+    M2MTokenRequest,
 )
 
 __all__ = [
@@ -12,4 +21,13 @@ __all__ = [
     "AppointmentCreate",
     "AppointmentResponse",
     "AppointmentInternal",
+    "UserRole",
+    "UserBase",
+    "UserCreate",
+    "UserResponse",
+    "UserInDB",
+    "Token",
+    "TokenPayload",
+    "MFAVerifyRequest",
+    "M2MTokenRequest",
 ]
