@@ -1,0 +1,82 @@
+[1mEVIDENCIAS MedSync API - 2026-10-03T21:51:16-03:00[0m  alvo: http://127.0.0.1:8000
+
+[1m== Ex.6 - Autenticacao (bcrypt + JWT) e RBAC ==[0m
+  [32m[OK][0m login com senha errada  -> HTTP 401 (esperado 401)
+  [32m[OK][0m rota protegida sem token  -> HTTP 401 (esperado 401)
+  [32m[OK][0m recepcao nao acessa rota admin  -> HTTP 403 (esperado 403)
+  [32m[OK][0m medico nao acessa rota admin  -> HTTP 403 (esperado 403)
+  [32m[OK][0m admin SEM MFA bloqueado na rota admin  -> HTTP 403 (esperado 403)
+  [32m[OK][0m admin COM MFA (TOTP) acessa rota admin  -> HTTP 200 (esperado 200)
+
+[1m== Falha 1 - Escalada de privilegio via /auth/register ==[0m
+  [32m[OK][0m ATAQUE: auto-cadastro como admin sem autenticacao  -> HTTP 401 (esperado 401)
+  [32m[OK][0m medico tentando cadastrar usuario  -> HTTP 403 (esperado 403)
+  [32m[OK][0m admin+MFA cadastra recepcionista  -> HTTP 201 (esperado 201)
+  [32m[OK][0m admin+MFA tentando criar papel 'partner'  -> HTTP 422 (esperado 422)
+
+[1m== Falha 2 - MFA fixo / sem primeiro fator ==[0m
+  [32m[OK][0m ATAQUE: codigo fixo 849201 sem token  -> HTTP 401 (esperado 401)
+  [32m[OK][0m ATAQUE: codigo fixo 849201 COM token do 1o fator  -> HTTP 401 (esperado 401)
+  brute-force de MFA (8 tentativas seguidas):
+    tentativa 1 -> HTTP 401
+    tentativa 2 -> HTTP 401
+    tentativa 3 -> HTTP 401
+    tentativa 4 -> HTTP 429
+    tentativa 5 -> HTTP 429
+    tentativa 6 -> HTTP 429
+    tentativa 7 -> HTTP 429
+    tentativa 8 -> HTTP 429
+
+[1m== Ex.7 / Falha 3 - Token M2M do laboratorio (escopo so read_slots) ==[0m
+  [32m[OK][0m lab le horarios disponiveis (permitido)  -> HTTP 200 (esperado 200)
+  [32m[OK][0m ATAQUE: lab lista consultas  -> HTTP 403 (esperado 403)
+  [32m[OK][0m ATAQUE: lab le consulta por ID  -> HTTP 403 (esperado 403)
+  [32m[OK][0m ATAQUE: lab apaga consulta  -> HTTP 403 (esperado 403)
+  [32m[OK][0m lab fora do escopo (/lab/manage-patients)  -> HTTP 403 (esperado 403)
+  [32m[OK][0m medico nao usa escopo do lab  -> HTTP 403 (esperado 403)
+
+[1m== Ex.8/9 - BOLA / ownership centralizado (Dr. Roberto = CRM/SP 123456) ==[0m
+  [32m[OK][0m medico le a PROPRIA consulta (id 1)  -> HTTP 200 (esperado 200)
+  [32m[OK][0m ATAQUE BOLA: medico le consulta de OUTRO (id 2)  -> HTTP 403 (esperado 403)
+  [32m[OK][0m ATAQUE BOLA: medico APAGA consulta de outro (id 2)  -> HTTP 403 (esperado 403)
+  [32m[OK][0m ATAQUE spoofing: criar consulta no CRM de outro medico  -> HTTP 403 (esperado 403)
+  [32m[OK][0m recepcao NAO cria consulta  -> HTTP 403 (esperado 403)
+  [32m[OK][0m recepcao NAO apaga consulta  -> HTTP 403 (esperado 403)
+
+[1m== Ex.9 - Validacao de entrada (whitelist/regex/extra=forbid) ==[0m
+  [32m[OK][0m campo nao declarado (mass assignment)  -> HTTP 422 (esperado 422)
+  [32m[OK][0m XSS no nome do paciente  -> HTTP 422 (esperado 422)
+  [32m[OK][0m CPF fora do padrao  -> HTTP 422 (esperado 422)
+  [32m[OK][0m SQL injection em doctor_name  -> HTTP 422 (esperado 422)
+
+[1m== Ex.2 - response_model (sem campos internos de auditoria) ==[0m
+{"id":1,"patient_name":"Mariana Souza","doctor_name":"Dr. Roberto Silva","doctor_crm":"CRM/SP 123456","appointment_datetime":"2026-10-05T09:30:00Z","specialty":"Cardiologia","status":"agendada"}
+  [32m[OK][0m resposta sem internal_audit_id / created_by_ip / internal_notes / CPF
+
+[1m== Ex.2/Falha 4 - Pagina da recepcao (Jinja2) exige autenticacao ==[0m
+  [32m[OK][0m ATAQUE: agenda sem token  -> HTTP 401 (esperado 401)
+  [32m[OK][0m agenda com token da recepcao  -> HTTP 200 (esperado 200)
+  [32m[OK][0m agenda com token de medico  -> HTTP 403 (esperado 403)
+
+[1m== Ex.10 - Headers de seguranca e CORS ==[0m
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-frame-options: DENY
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: default-src 'self'; frame-ancestors 'none';
+  CORS origem permitida (http://localhost:3000):
+access-control-allow-origin: http://localhost:3000
+  CORS origem do atacante (https://attacker.com) -> nao deve haver allow-origin:
+    (sem header allow-origin = bloqueado)
+
+[1m== Ex.10 - Rate limiting no login (por ultimo) ==[0m
+    tentativa 1 -> HTTP 401
+    tentativa 2 -> HTTP 429
+    tentativa 3 -> HTTP 429
+    tentativa 4 -> HTTP 429
+    tentativa 5 -> HTTP 429
+    tentativa 6 -> HTTP 429
+    tentativa 7 -> HTTP 429
+    tentativa 8 -> HTTP 429
+
+[1mRESUMO: [32m32 OK[0m / [31m0 falhas[0m

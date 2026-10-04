@@ -3,7 +3,7 @@ from app.database.session import engine
 from app.models.appointment import Appointment
 
 
-def test_extra_forbid_blocks_parameter_pollution(client, receptionist_headers):
+def test_extra_forbid_blocks_parameter_pollution(client, doctor_roberto_headers):
     payload = {
         "patient_name": "Marcos Silva",
         "patient_cpf": "123.456.789-01",
@@ -14,12 +14,12 @@ def test_extra_forbid_blocks_parameter_pollution(client, receptionist_headers):
         "status": "agendada",
         "unauthorized_field": "injected_value",
     }
-    response = client.post("/appointments/", json=payload, headers=receptionist_headers)
+    response = client.post("/appointments/", json=payload, headers=doctor_roberto_headers)
     assert response.status_code == 422
     assert "extra_forbidden" in str(response.json())
 
 
-def test_whitelist_and_regex_validation(client, receptionist_headers):
+def test_whitelist_and_regex_validation(client, doctor_roberto_headers):
     payload_invalid_cpf = {
         "patient_name": "Marcos Silva",
         "patient_cpf": "123.456.789-XX",
@@ -29,7 +29,7 @@ def test_whitelist_and_regex_validation(client, receptionist_headers):
         "specialty": "Cardiologia",
         "status": "agendada",
     }
-    resp_cpf = client.post("/appointments/", json=payload_invalid_cpf, headers=receptionist_headers)
+    resp_cpf = client.post("/appointments/", json=payload_invalid_cpf, headers=doctor_roberto_headers)
     assert resp_cpf.status_code == 422
     assert "patient_cpf" in str(resp_cpf.json())
 
@@ -42,7 +42,7 @@ def test_whitelist_and_regex_validation(client, receptionist_headers):
         "specialty": "Cardiologia",
         "status": "agendada",
     }
-    resp_crm = client.post("/appointments/", json=payload_invalid_crm, headers=receptionist_headers)
+    resp_crm = client.post("/appointments/", json=payload_invalid_crm, headers=doctor_roberto_headers)
     assert resp_crm.status_code == 422
     assert "doctor_crm" in str(resp_crm.json())
 
@@ -55,7 +55,7 @@ def test_whitelist_and_regex_validation(client, receptionist_headers):
         "specialty": "Cardiologia",
         "status": "agendada",
     }
-    resp_xss = client.post("/appointments/", json=payload_xss_name, headers=receptionist_headers)
+    resp_xss = client.post("/appointments/", json=payload_xss_name, headers=doctor_roberto_headers)
     assert resp_xss.status_code == 422
     assert "patient_name" in str(resp_xss.json())
 
@@ -101,17 +101,17 @@ def test_login_rate_limiting(client):
     assert rate_limited_response.headers.get("Retry-After") == "60"
 
 
-def test_sqlmodel_persistence_and_parameterized_query(client, receptionist_headers):
+def test_sqlmodel_persistence_and_parameterized_query(client, doctor_roberto_headers):
     payload = {
         "patient_name": "Daniela Paiva",
         "patient_cpf": "444.555.666-77",
-        "doctor_name": "Dra. Beatriz Santos",
-        "doctor_crm": "CRM/SP 654321",
+        "doctor_name": "Dr. Roberto Silva",
+        "doctor_crm": "CRM/SP 123456",
         "appointment_datetime": "2026-10-18T16:00:00Z",
-        "specialty": "Dermatologia",
+        "specialty": "Cardiologia",
         "status": "agendada",
     }
-    response = client.post("/appointments/", json=payload, headers=receptionist_headers)
+    response = client.post("/appointments/", json=payload, headers=doctor_roberto_headers)
     assert response.status_code == 201
     created_id = response.json()["id"]
 

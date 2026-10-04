@@ -1,33 +1,36 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel import Session, select
 
-from app.core.dependencies import get_current_token_payload
+from app.core.dependencies import (
+    enforce_appointment_ownership,
+    get_manageable_appointment,
+    get_readable_appointment,
+    require_roles,
+)
 from app.database.session import get_session
 from app.models.appointment import Appointment, AppointmentCreate, AppointmentResponse
 from app.models.user import TokenPayload, UserRole
 
 router = APIRouter(prefix="/appointments", tags=["Consultas"])
 
+READ_ROLES = [UserRole.DOCTOR, UserRole.RECEPTIONIST, UserRole.ADMIN]
+
 
 @router.post(
     "/",
     response_model=AppointmentResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Criar novo agendamento de consulta",
+    summary="Criar novo agendamento de consulta (apenas profissionais de saúde)",
 )
 async def create_appointment(
     data: AppointmentCreate,
     request: Request,
-    payload: TokenPayload = Depends(get_current_token_payload),
+    payload: TokenPayload = Depends(require_roles([UserRole.DOCTOR], ["appointments:write"])),
     session: Session = Depends(get_session),
 ) -> Any:
-    if payload.role == UserRole.DOCTOR.value:
-        if payload.doctor_crm and data.doctor_crm != payload.doctor_crm:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Profissionais de saúde só podem criar consultas para o seu próprio CRM.",
-            )
+    enforce_appointment_ownership(payload, data.doctor_crm)
 
     client_ip = request.client.host if request.client else "unknown"
     record = Appointment(
@@ -53,16 +56,14 @@ async def create_appointment(
     summary="Listar consultas com controle de acesso",
 )
 async def list_appointments(
-    payload: TokenPayload = Depends(get_current_token_payload),
+    payload: TokenPayload = Depends(require_roles(READ_ROLES, ["appointments:read"])),
     session: Session = Depends(get_session),
 ) -> Any:
+    statement = select(Appointment)
     if payload.role == UserRole.DOCTOR.value:
-        statement = select(Appointment).where(Appointment.doctor_crm == payload.doctor_crm)
-    else:
-        statement = select(Appointment)
-    
-    results = session.exec(statement).all()
-    return list(results)
+        # Médico sem CRM no token enxerga lista vazia (nunca "tudo").
+        statement = statement.where(Appointment.doctor_crm == (payload.doctor_crm or ""))
+    return list(session.exec(statement).all())
 
 
 @router.get(
@@ -71,52 +72,19 @@ async def list_appointments(
     summary="Obter detalhes de uma consulta por ID",
 )
 async def get_appointment(
-    appointment_id: int,
-    payload: TokenPayload = Depends(get_current_token_payload),
-    session: Session = Depends(get_session),
+    appointment: Appointment = Depends(get_readable_appointment),
 ) -> Any:
-    statement = select(Appointment).where(Appointment.id == appointment_id)
-    appointment = session.exec(statement).first()
-    if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Consulta com ID {appointment_id} não encontrada.",
-        )
-
-    if payload.role == UserRole.DOCTOR.value:
-        if payload.doctor_crm and appointment.doctor_crm != payload.doctor_crm:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Você só tem permissão para visualizar consultas sob seu CRM.",
-            )
-
     return appointment
 
 
 @router.delete(
     "/{appointment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Cancelar/remover agendamento de consulta",
+    summary="Cancelar/remover agendamento de consulta (apenas o médico responsável)",
 )
 async def delete_appointment(
-    appointment_id: int,
-    payload: TokenPayload = Depends(get_current_token_payload),
+    appointment: Appointment = Depends(get_manageable_appointment),
     session: Session = Depends(get_session),
 ) -> None:
-    statement = select(Appointment).where(Appointment.id == appointment_id)
-    appointment = session.exec(statement).first()
-    if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Consulta com ID {appointment_id} não encontrada para remoção.",
-        )
-
-    if payload.role == UserRole.DOCTOR.value:
-        if payload.doctor_crm and appointment.doctor_crm != payload.doctor_crm:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado. Você só tem permissão para cancelar consultas sob seu CRM.",
-            )
-
     session.delete(appointment)
     session.commit()

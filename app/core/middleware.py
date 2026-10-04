@@ -22,13 +22,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "img-src 'self' data: https://fastapi.tiangolo.com; "
                 "frame-ancestors 'none';"
             )
+        elif request.url.path.startswith("/recepcao"):
+            # Página HTML da recepção usa <style> embutido; scripts continuam bloqueados.
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none';"
+            )
         else:
             response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
 
         return response
 
 
-class LoginRateLimiter:
+class RateLimiter:
     def __init__(self, limit: int = 5, window_seconds: int = 60):
         self.limit = limit
         self.window_seconds = window_seconds
@@ -47,7 +52,16 @@ class LoginRateLimiter:
         self.requests.clear()
 
 
-login_rate_limiter = LoginRateLimiter(
+# Compatibilidade com o nome usado nos testes/relatórios anteriores.
+LoginRateLimiter = RateLimiter
+
+login_rate_limiter = RateLimiter(
     limit=settings.LOGIN_RATE_LIMIT_PER_MINUTE,
+    window_seconds=60,
+)
+
+# Limiter separado para a verificação de MFA (códigos de 6 dígitos são brute-forceáveis).
+mfa_rate_limiter = RateLimiter(
+    limit=settings.MFA_RATE_LIMIT_PER_MINUTE,
     window_seconds=60,
 )

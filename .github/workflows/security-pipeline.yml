@@ -10,6 +10,10 @@ jobs:
   security-audit:
     name: Security Gate & Automated Tests
     runs-on: ubuntu-latest
+    env:
+      # Valores APENAS de teste (nenhum segredo real). Em produção vêm de cofre/ambiente.
+      SECRET_KEY: "ci-only-secret-key-not-for-production-0123456789abcdef"
+      DATABASE_URL: "sqlite:///./ci_test.db"
 
     steps:
       - name: Checkout Code
@@ -35,7 +39,7 @@ jobs:
       - name: Stage 2 - Static Application Security Testing (SAST)
         run: |
           echo "Executando análise estática de segurança no código com Bandit..."
-          echo "Security Gate Ativo: Bloqueio imediato para achados de severidade MÉDIA ou ALTA."
+          echo "Security Gate Ativo: bandit -ll bloqueia achados de severidade MÉDIA ou ALTA (Low apenas registrado)."
           bandit -r app/ -ll
 
       - name: Stage 3 - Automated Security and Unit Testing (Pytest)

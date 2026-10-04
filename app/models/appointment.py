@@ -6,6 +6,9 @@ from pydantic import ConfigDict, field_validator
 from sqlmodel import Field as SQLField, SQLModel
 
 
+ALLOWED_STATUSES = {"agendada", "confirmada", "cancelada"}
+
+
 class AppointmentBase(SQLModel):
     patient_name: str = SQLField(
         ...,
@@ -52,6 +55,20 @@ class AppointmentBase(SQLModel):
         pattern = r"^[A-Za-zÀ-ÖØ-öø-ÿ\s\.\'-]{2,100}$"
         if not re.match(pattern, v):
             raise ValueError("Nome do paciente contém caracteres inválidos. Apenas letras e acentos são permitidos.")
+        return v
+
+    @field_validator("doctor_name", "specialty")
+    @classmethod
+    def validate_text_whitelist(cls, v: str) -> str:
+        if not re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ\s\.\'-]{2,100}", v):
+            raise ValueError("Campo contém caracteres inválidos. Apenas letras e acentos são permitidos.")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def validate_status_whitelist(cls, v: str) -> str:
+        if v not in ALLOWED_STATUSES:
+            raise ValueError(f"status inválido. Valores aceitos: {sorted(ALLOWED_STATUSES)}")
         return v
 
 

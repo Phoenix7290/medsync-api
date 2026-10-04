@@ -1,0 +1,32 @@
+services:
+  api:
+    build: .
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY no .env}
+      DATABASE_URL: sqlite:////tmp/zap_scan.db
+      SEED_DEMO_DATA: "true"
+      DEMO_USERS_PASSWORD: ${DEMO_USERS_PASSWORD:?defina DEMO_USERS_PASSWORD no .env}
+      DEMO_LAB_CLIENT_SECRET: ${DEMO_LAB_CLIENT_SECRET:?defina DEMO_LAB_CLIENT_SECRET no .env}
+      DEMO_ADMIN_MFA_SECRET: ${DEMO_ADMIN_MFA_SECRET:?defina DEMO_ADMIN_MFA_SECRET no .env}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  zap:
+    image: zaproxy/zap-stable
+    depends_on:
+      api:
+        condition: service_healthy
+    user: root
+    volumes:
+      - ./docs:/zap/wrk:rw
+    command: >
+      zap-api-scan.py
+      -t http://api:8000/openapi.json
+      -f openapi
+      -J owasp_zap_scan_report.json
+      -r owasp_zap_scan_report.html
+      -S
+      -I
