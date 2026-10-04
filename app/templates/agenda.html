@@ -70,7 +70,7 @@
             </p>
         </div>
         <div>
-            <span style="font-size: 0.85rem; color: #666;">Data de Referência: <strong>Hoje</strong></span>
+            <span style="font-size: 0.85rem; color: #666;">Data de Referência: <strong>{{ data_ref.strftime('%d/%m/%Y') if data_ref else 'Todas as datas' }}</strong></span>
         </div>
     </div>
 
@@ -101,7 +101,7 @@
                 {% else %}
                 <tr>
                     <td colspan="5" style="text-align: center; color: #777; padding: 2rem;">
-                        Nenhuma consulta agendada para hoje até o momento.
+                        Nenhuma consulta encontrada para o filtro selecionado.
                     </td>
                 </tr>
                 {% endfor %}

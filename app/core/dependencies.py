@@ -70,7 +70,7 @@ def require_roles(allowed_roles: List[UserRole], required_scopes: Optional[List[
         if payload.role not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Acesso negado. Esta operação exige perfil: {allowed}",
+                detail="Acesso negado. Seu perfil não tem permissão para esta operação.",
             )
         for scope in required_scopes or []:
             if scope not in payload.scopes:

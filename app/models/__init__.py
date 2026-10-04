@@ -19,7 +19,6 @@ from app.models.user import (
     M2MTokenRequest,
 )
 
-# Alias para compatibilidade
 AppointmentInternal = Appointment
 
 __all__ = [

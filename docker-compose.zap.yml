@@ -2,6 +2,7 @@ services:
   api:
     build: .
     environment:
+      ENVIRONMENT: development
       SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY no .env}
       DATABASE_URL: sqlite:////tmp/zap_scan.db
       SEED_DEMO_DATA: "true"
@@ -22,11 +23,3 @@ services:
     user: root
     volumes:
       - ./docs:/zap/wrk:rw
-    command: >
-      zap-api-scan.py
-      -t http://api:8000/openapi.json
-      -f openapi
-      -J owasp_zap_scan_report.json
-      -r owasp_zap_scan_report.html
-      -S
-      -I

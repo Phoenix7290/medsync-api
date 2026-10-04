@@ -1,0 +1,25 @@
+MedSync API - comparativo antes x depois (mesmos ataques)
+antes: 1d6d142 e ab4db0d | depois: 3eca8e7 (com alteracoes nao commitadas)
+
+== Versao inicial x atual ==
+  ataque / verificacao                                                       antes      depois
+  listar todas as consultas sem token                                 EXPLORADO 200BLOQUEADO 401
+  BOLA: ler consulta de outro paciente (id 2) sem token               EXPLORADO 200BLOQUEADO 401
+  agenda HTML da recepcao sem token                                   EXPLORADO 200BLOQUEADO 401
+
+== Versao pre-correcao x atual ==
+  ataque / verificacao                                                       antes      depois
+  MFA: codigo fixo 849201 sem 1o fator, depois /admin/audit-logs      EXPLORADO 200BLOQUEADO 401
+  JWT forjado como admin com a chave padrao do codigo antigo          EXPLORADO 200BLOQUEADO 401
+  token do laboratorio listando consultas                             EXPLORADO 200BLOQUEADO 403
+  token do laboratorio lendo consulta por ID                          EXPLORADO 200BLOQUEADO 403
+  agenda HTML da recepcao sem token                                   EXPLORADO 200BLOQUEADO 401
+  mass assignment: campo nao declarado is_admin                       EXPLORADO 201BLOQUEADO 422
+  XSS armazenado no nome do paciente                                  EXPLORADO 201BLOQUEADO 422
+  CPF fora do padrao (invalid-cpf-1)                                  EXPLORADO 201BLOQUEADO 422
+  SQL injection em doctor_name                                        EXPLORADO 201BLOQUEADO 422
+  BOLA: medico le consulta de outro medico (id 2)                     BLOQUEADO 403BLOQUEADO 403
+  controle: payload legitimo do medico                                      OK 201      OK 201
+  recepcionista cria consulta                                         EXPLORADO 201BLOQUEADO 403
+  recepcionista apaga consulta (id 2)                                 EXPLORADO 204BLOQUEADO 403
+

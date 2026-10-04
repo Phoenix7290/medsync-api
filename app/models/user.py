@@ -13,9 +13,6 @@ class UserRole(str, Enum):
     PARTNER = "partner"
 
 
-# ---------------------------------------------------------------------------
-# Tabelas (SQLModel) — persistência de usuários e clientes M2M
-# ---------------------------------------------------------------------------
 class User(SQLModel, table=True):
     __tablename__: Any = "users"
 
@@ -35,20 +32,15 @@ class PartnerClient(SQLModel, table=True):
 
     client_id: str = SQLField(primary_key=True, max_length=100)
     client_secret_hash: str
-    allowed_scopes: str  # escopos separados por espaço (convenção OAuth 2.0)
+    allowed_scopes: str  
 
     @property
     def scopes_list(self) -> List[str]:
         return self.allowed_scopes.split()
 
 
-# Alias usado pelo restante do código
 UserInDB = User
 
-
-# ---------------------------------------------------------------------------
-# Schemas de entrada/saída (Pydantic)
-# ---------------------------------------------------------------------------
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
@@ -107,7 +99,6 @@ class UserResponse(UserBase):
 
 
 class UserCreatedResponse(UserResponse):
-    # Entregue uma única vez na criação de contas administrativas (cadastro no autenticador).
     mfa_provisioning_secret: Optional[str] = None
 
 

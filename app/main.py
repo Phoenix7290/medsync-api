@@ -18,6 +18,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Em produção a documentação interativa e o schema OpenAPI não são expostos publicamente
+# (reduz a superfície de reconhecimento; ver Ex. 13, auditoria OpenAPI).
+_is_production = settings.ENVIRONMENT.strip().lower() == "production"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description=(
@@ -26,6 +30,9 @@ app = FastAPI(
     ),
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 
 app.add_middleware(

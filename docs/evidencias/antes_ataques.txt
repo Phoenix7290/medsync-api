@@ -1,0 +1,26 @@
+MedSync API - ataques ANTES das correcoes
+gerado em 2026-10-03T22:52:59-03:00
+codigo analisado: commits 1d6d142 e ab4db0d
+
+== Versao inicial 1d6d142 (Ex.1 e Ex.2, sem autenticacao) ==
+  [EXPLORADO] listar todas as consultas sem token  -> HTTP 200
+  [EXPLORADO] BOLA: ler consulta de outro paciente (id 2) sem token  -> HTTP 200
+  [EXPLORADO] agenda HTML da recepcao sem token  -> HTTP 200
+  resumo: 3 de 3 ataques exploraram a falha
+
+== Versao ab4db0d (autenticacao do Ex.6 e 7, antes das correcoes do Ex.8 e 9) ==
+  [EXPLORADO] MFA: codigo fixo 849201 sem 1o fator, depois /admin/audit-logs  -> HTTP 200
+  [EXPLORADO] JWT forjado como admin com a chave padrao do codigo antigo  -> HTTP 200
+  [EXPLORADO] token do laboratorio listando consultas  -> HTTP 200
+  [EXPLORADO] token do laboratorio lendo consulta por ID  -> HTTP 200
+  [EXPLORADO] agenda HTML da recepcao sem token  -> HTTP 200
+  [EXPLORADO] mass assignment: campo nao declarado is_admin  -> HTTP 201
+  [EXPLORADO] XSS armazenado no nome do paciente  -> HTTP 201
+  [EXPLORADO] CPF fora do padrao (invalid-cpf-1)  -> HTTP 201
+  [EXPLORADO] SQL injection em doctor_name  -> HTTP 201
+  [BLOQUEADO] BOLA: medico le consulta de outro medico (id 2)  -> HTTP 403
+  [OK       ] controle: payload legitimo do medico  -> HTTP 201
+  [EXPLORADO] recepcionista cria consulta  -> HTTP 201
+  [EXPLORADO] recepcionista apaga consulta (id 2)  -> HTTP 204
+  resumo: 11 de 12 ataques exploraram a falha
+

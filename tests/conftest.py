@@ -1,6 +1,5 @@
 import os
 
-# Ambiente de teste ISOLADO: precisa ser definido ANTES de importar a aplicação.
 os.environ["SECRET_KEY"] = "test-only-secret-key-not-for-production-0123456789abcdef"
 os.environ["DATABASE_URL"] = "sqlite:///./test_medsync.db"
 os.environ["SEED_DEMO_DATA"] = "true"

@@ -1,105 +1,78 @@
 # MedSync API — Agendamento Seguro de Consultas Médicas
 
-API RESTful modularizada desenvolvida com **FastAPI**, **Pydantic** e **SQLModel** para gerenciamento de agendamentos em redes de clínicas médicas, em estrita conformidade com a **LGPD** e as melhores práticas da **OWASP Top 10**.
+API RESTful modularizada com **FastAPI**, **Pydantic** e **SQLModel** para agendamento de consultas em redes de clínicas, desenhada para dados de saúde sob a **LGPD** e para as categorias do **OWASP API Security Top 10**.
 
 **Estudante:** Marcos Ryan
 
+## Vídeo de apresentação (YouTube, não listado)
+
+- **Link:** [youtube-link](https://youtu.be/0cyzDBWq-KE)
+- **Backup (Drive):** [link](https://drive.google.com/file/d/1NbZpZJL85cR2zsuIglHnQMpHzZoefh7W/view?usp=drive_link)
+
+## Relatório técnico
+
+Ponto de entrada: [`docs/RELATORIO_TECNICO.md`](docs/RELATORIO_TECNICO.md) (decisão, código, teste e evidência de cada exercício).
+
+| Exercícios  | Documento                                                                                                   |
+| :----------- | :---------------------------------------------------------------------------------------------------------- |
+| 1, 2, 6, 7   | [`docs/decisoes_ex1_ex2_ex6_ex7.md`](docs/decisoes_ex1_ex2_ex6_ex7.md)                                     |
+| 3, 4, 5      | [`docs/modelagem_seguranca_ex3_ex4_ex5.md`](docs/modelagem_seguranca_ex3_ex4_ex5.md)                       |
+| 8, 9, 10, 11 | [`docs/vulnerabilidades_owasp_e_correcoes_ex8_ex9.md`](docs/vulnerabilidades_owasp_e_correcoes_ex8_ex9.md) |
+| 12, 13       | [`docs/relatorio_final_capstone_ex12_ex13.md`](docs/relatorio_final_capstone_ex12_ex13.md)                 |
+
 ---
 
-## Vídeo de Apresentação Técnica (YouTube)
-
-- **Link do Vídeo (Não Listado):** [youtube-link](https://youtu.be/0cyzDBWq-KE)
-- **Duração:** Até 5 minutos
-- **Conteúdo Apresentado:** Apresentação da arquitetura modular, mitigações OWASP (BOLA, XSS, Mass Assignment), autenticação RBAC com ownership, demonstração ao vivo com 31 testes pytest aprovados, Security Gate no GitHub Actions e parecer de risco residual.
-- **Link de vídeo Drive (Backup):** [link](https://drive.google.com/file/d/1NbZpZJL85cR2zsuIglHnQMpHzZoefh7W/view?usp=drive_link)
-
----
-
-## Como Executar o Projeto Localmente
-
-### 1. Criar e Ativar o Ambiente Virtual Python
+## Como executar
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 2. Instalar as Dependências
-
-```bash
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 3. Configurar Variáveis de Ambiente
-
-```bash
-cp .env.example .env
-```
-
-### 4. Executar o Servidor FastAPI
-
-```bash
+cp .env.example .env          # preencha SECRET_KEY (openssl rand -hex 32) e, para demo, SEED_DEMO_DATA=true + senhas SUAS
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-* **Swagger UI (Documentação Interativa):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-* **OpenAPI Schema (JSON):** [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
-* **Portal Web da Recepção (Jinja2):** [http://127.0.0.1:8000/recepcao/agenda](http://127.0.0.1:8000/recepcao/agenda)
+- Swagger: http://127.0.0.1:8000/docs · OpenAPI: `/openapi.json` (**desativados** com `ENVIRONMENT=production`)
+- Agenda da recepção: `GET /recepcao/agenda?data=AAAA-MM-DD&limit=100&offset=0` (exige `Authorization: Bearer <token>` de recepcionista/admin)
+- Código TOTP do admin de demonstração: `python scripts/gen_totp.py`
 
----
-
-## Como Executar a Suíte de Testes Automatizados
+## Testes
 
 ```bash
-pytest -v
+pytest -v        # 63 testes
 ```
 
-Todos os **31 testes automatizados** cobrem:
+Cobrem: CRUD de consultas, `response_model`, XSS (auto-escape), bcrypt, RBAC, MFA TOTP, ownership (BOLA), OAuth2 Client Credentials e escopos, `extra='forbid'`, whitelist/regex, headers de segurança, CORS, rate limit, SQLModel, mocking de sessão, auditoria OpenAPI, regressão de cada falha corrigida e achados do ZAP.
 
-- Rotas RESTful de consultas
-- Não-vazamento de dados internos de auditoria (Pydantic Response Models)
-- Prevenção contra Stored XSS com autoescape do Jinja2
-- Hashing de senhas com bcrypt
-- RBAC e restrição de acesso administrativo
-- MFA simulado para contas de administradores
-- Verificação de ownership de consultas (prevenção de BOLA/IDOR)
-- Fluxo OAuth 2.0 Client Credentials e escopos do laboratório (M2M)
-- Rejeição de propriedades não declaradas (`extra="forbid"`)
-- Validações de regex e whitelist para CPF, CRM e nomes
-- Cabeçalhos de segurança HTTP (HSTS, CSP, X-Frame-Options, X-Content-Type-Options)
-- Allowlist explícita de CORS
-- Rate Limiting diferenciado na rota de login
-- Persistência segura e queries parametrizadas com SQLModel
-- Testes unitários com Mocks e auditoria da especificação OpenAPI
+## Pipeline DevSecOps (GitHub Actions)
 
----
+`.github/workflows/security-pipeline.yml` — job **`Security Gate`**. Bloqueia se: `pip-audit --strict` achar qualquer CVE; `bandit -ll` achar severidade Medium/High; ou qualquer teste falhar. Justificativa do critério: `docs/relatorio_final_capstone_ex12_ex13.md` §1.3.
 
-## Auditorias de Segurança Automatizadas
-
-### Scan SAST com Bandit (Security Gate: Médio/Alto)
+**Para o gate realmente impedir o merge**, ative a branch protection (uma vez, com o repositório no GitHub e o `gh` autenticado):
 
 ```bash
-bandit -r app/ -ll
+gh api -X PUT repos/<USUARIO>/<REPO>/branches/main/protection --input - <<'JSON'
+{
+  "required_status_checks": { "strict": true, "contexts": ["Security Gate"] },
+  "enforce_admins": true,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
 ```
 
-### Análise de Dependências (SCA) com Pip-Audit
+## Scan OWASP ZAP (DAST, pré-release)
 
 ```bash
-pip-audit -r requirements.txt
+# API no ar (SEED_DEMO_DATA=true) em outro terminal. Docker necessário.
+bash scripts/run_zap_scan.sh after                       # scan passivo AUTENTICADO -> docs/owasp_zap_after.{json,html}
+python scripts/zap_gate.py docs/owasp_zap_after.json     # gate: qualquer alerta >= Medium bloqueia
 ```
 
-### Auditoria e Scan Passivo OWASP ZAP
+`docs/owasp_zap_baseline.*` é o scan 1 (sem autenticação, só enxergou a superfície pública). Detalhes e correlação com OWASP: relatório final, §2.2–2.3.
+
+## Gerar evidência da versão atual
 
 ```bash
-python scripts/run_zap_passive_audit.py
+uvicorn app.main:app --port 8000      # em outro terminal, com SEED_DEMO_DATA=true
+bash scripts/gerar_evidencias.sh      # grava docs/evidencias/evidencias_<data>.txt
 ```
-
-O relatório consolidado de 30 verificações aprovadas é salvo em `docs/owasp_zap_scan_report.json`.
-
----
-
-## Documentação Técnica Completa (Relatórios de Avaliação)
-
-- **Exercícios 3, 4 e 5:** [`docs/modelagem_seguranca_ex3_ex4_ex5.md`](docs/modelagem_seguranca_ex3_ex4_ex5.md) (Tríade CIA, DFD com Trust Boundaries, STRIDE e Arquitetura nos 3 Eixos)
-- **Exercícios 8, 9, 10 e 11:** [`docs/vulnerabilidades_owasp_e_correcoes_ex8_ex9.md`](docs/vulnerabilidades_owasp_e_correcoes_ex8_ex9.md) (Identificação de Falhas OWASP, Evidências Antes/Depois, Hardening e SQLModel)
-- **Exercícios 12 e 13:** [`docs/relatorio_final_capstone_ex12_ex13.md`](docs/relatorio_final_capstone_ex12_ex13.md) (Pipeline DevSecOps, CVSS, Auditoria ZAP, Avaliação de Risco Residual e Roteiro do Vídeo)

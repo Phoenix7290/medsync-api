@@ -13,6 +13,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Achado real do ZAP (regra 90004): isola os recursos da API de leituras cross-origin "no-cors".
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        # Achado real do ZAP (regra 10049): respostas com dados de saúde nunca devem ser cacheadas
+        # por navegadores ou proxies intermediários.
+        response.headers["Cache-Control"] = "no-store"
 
         if request.url.path in ("/docs", "/redoc", "/openapi.json"):
             response.headers["Content-Security-Policy"] = (
