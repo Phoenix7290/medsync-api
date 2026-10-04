@@ -76,3 +76,4 @@ python scripts/zap_gate.py docs/owasp_zap_after.json     # gate: qualquer alerta
 uvicorn app.main:app --port 8000      # em outro terminal, com SEED_DEMO_DATA=true
 bash scripts/gerar_evidencias.sh      # grava docs/evidencias/evidencias_<data>.txt
 ```
+AWS_KEY="AKIAIOSFODNN7EXAMPLE"
